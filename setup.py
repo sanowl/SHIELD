@@ -30,10 +30,10 @@ setup(
     description="Comprehensive LLM Adversarial Robustness Framework",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/shield-team/shield",
+    url="https://github.com/sanowl/SHIELD",
     project_urls={
-        "Bug Reports": "https://github.com/shield-team/shield/issues",
-        "Source": "https://github.com/shield-team/shield",
+        "Bug Reports": "https://github.com/sanowl/SHIELD/issues",
+        "Source": "https://github.com/sanowl/SHIELD",
         "Documentation": "https://shield-llm.readthedocs.io/",
     },
     packages=find_packages(),

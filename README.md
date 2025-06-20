@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Framework](https://img.shields.io/badge/framework-production--ready-green.svg)](https://github.com/san-hashim/shield)
+[![Framework](https://img.shields.io/badge/framework-production--ready-green.svg)](https://github.com/sanowl/SHIELD)
 [![Research](https://img.shields.io/badge/research-2024--2025-purple.svg)](https://github.com/sanowl/SHIELD)
 
 > **A production-ready implementation of breakthrough LLM security research from 2024-2025, providing state-of-the-art protection against adversarial attacks with mathematical rigor and enterprise-grade reliability.**
@@ -866,8 +866,8 @@ processed_data = gdpr.process_user_data(
 
 ```bash
 # Clone repository
-git clone https://github.com/san-hashim/shield.git
-cd shield
+git clone https://github.com/sanowl/SHIELD.git
+cd SHIELD
 
 # Create virtual environment
 python -m venv venv
@@ -937,6 +937,10 @@ safety check
 ### **Community & Support**
 
 - **📧 Direct Support**: san.hashimhama@outlook.com
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/sanowl/SHIELD/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/sanowl/SHIELD/discussions)
+- **📚 Documentation**: [GitBook](https://shield-docs.gitbook.io/)
+- **💬 Community Chat**: [Discord Server](https://discord.gg/shield-community)
 
 ## 📈 **Roadmap & Future Development**
 
