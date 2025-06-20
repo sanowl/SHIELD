@@ -1,0 +1,228 @@
+# SHIELD Security Policies Configuration
+# Comprehensive threat detection and prevention settings
+
+# Global Security Settings
+global:
+  enabled: true
+  strict_mode: false
+  risk_threshold: 0.7
+  enable_logging: true
+  log_level: "INFO"
+
+# Input Protection Settings
+input_protection:
+  enabled: true
+  
+  # Gradient-based Detection
+  gradient_detection:
+    enabled: true
+    threshold: 0.7
+    safety_layers: ["attention", "mlp", "output"]
+    baseline_calibration: true
+    
+  # Refusal Feature Detection
+  refusal_detection:
+    enabled: true
+    threshold: 0.7
+    feature_dimension: 768
+    variance_analysis: true
+    
+  # Security Scanning
+  security_scanning:
+    enabled: true
+    
+    prompt_injection:
+      enabled: true
+      strict_mode: false
+      patterns:
+        - "ignore\\s+previous\\s+instructions"
+        - "system\\s*:\\s*you\\s+are"
+        - "###\\s*new\\s+instructions"
+        - "disregard\\s+everything\\s+above"
+        - "\\\\u[0-9a-fA-F]{4}"
+        - "<\\s*script.*?>"
+    
+    pii_protection:
+      enabled: true
+      anonymize: true
+      strict_mode: false
+      patterns:
+        email: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"
+        phone: "\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b"
+        ssn: "\\b\\d{3}-?\\d{2}-?\\d{4}\\b"
+        credit_card: "\\b\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}\\b"
+    
+    toxicity_detection:
+      enabled: true
+      threshold: 0.7
+      keywords:
+        - "hate"
+        - "attack" 
+        - "harm"
+        - "violence"
+        - "threat"
+        - "discrimination"
+        - "harassment"
+        - "abuse"
+
+# Output Filtering Settings
+output_filtering:
+  enabled: true
+  min_compliance_score: 0.8
+  block_unsafe_outputs: true
+  
+  content_policies:
+    enabled: true
+    check_refusal_bypass: true
+    check_inappropriate_content: true
+    
+  regulatory_compliance:
+    enabled: true
+    regulations:
+      gdpr:
+        enabled: true
+        strict_mode: false
+        data_subject_rights: true
+        consent_validation: true
+        privacy_protection: true
+        
+      hipaa:
+        enabled: false  # Enable for healthcare applications
+        strict_mode: true
+        phi_protection: true
+        
+      pci:
+        enabled: false  # Enable for financial applications
+        strict_mode: true
+        payment_data_protection: true
+        
+  content_filtering:
+    pii_filtering: true
+    instruction_filtering: true
+    custom_filters: []
+
+# Monitoring and Alerting
+monitoring:
+  enabled: true
+  real_time_alerts: true
+  
+  # Event Storage
+  max_events: 10000
+  max_alerts: 1000
+  retention_days: 30
+  
+  # Alert Thresholds
+  thresholds:
+    high_risk_rate: 0.1      # >10% high-risk events
+    threat_spike: 5          # 5+ threats in 5 minutes
+    repeated_attacks: 3      # Same pattern 3+ times
+    critical_risk: 0.9       # Individual event risk > 0.9
+    
+  # Background Monitoring
+  background_monitoring: true
+  check_interval_minutes: 5
+  
+  # Report Generation
+  reports:
+    enabled: true
+    format: "json"  # json, text
+    schedule: "daily"  # hourly, daily, weekly
+
+# Model-Specific Settings
+models:
+  default:
+    risk_threshold: 0.7
+    enable_all_protections: true
+    
+  gpt-4:
+    risk_threshold: 0.6  # More sensitive for advanced models
+    gradient_detection: true
+    refusal_detection: true
+    
+  llama-2:
+    risk_threshold: 0.8  # Less sensitive for open models
+    gradient_detection: true
+    refusal_detection: false
+    
+  claude-3:
+    risk_threshold: 0.6
+    gradient_detection: true
+    refusal_detection: true
+
+# Evaluation Settings
+evaluation:
+  enabled: true
+  
+  benchmarks:
+    jailbreakbench:
+      enabled: true
+      sample_size: 100
+      categories: ["all"]
+      
+    harmbench:
+      enabled: true
+      sample_size: 50
+      severity_levels: ["medium", "high"]
+      
+  automated_testing:
+    enabled: false  # Enable for continuous evaluation
+    schedule: "weekly"
+    models_to_test: ["default"]
+    
+  custom_benchmarks:
+    enabled: false
+    test_cases: []
+
+# Integration Settings
+integrations:
+  # LLM Guard Integration
+  llm_guard:
+    enabled: false
+    endpoint: "http://localhost:8001"
+    api_key: null
+    
+  # Guardrails AI Integration  
+  guardrails_ai:
+    enabled: false
+    api_key: null
+    validators: []
+    
+  # Langfuse Integration
+  langfuse:
+    enabled: false
+    api_key: null
+    project_id: null
+    
+  # Cloud Provider Integration
+  cloud_providers:
+    aws:
+      enabled: false
+      region: "us-east-1"
+      cloudwatch_integration: false
+      
+    azure:
+      enabled: false
+      subscription_id: null
+      application_insights: false
+      
+    gcp:
+      enabled: false
+      project_id: null
+      cloud_monitoring: false
+
+# Performance Settings
+performance:
+  max_processing_time_ms: 5000
+  parallel_processing: true
+  max_concurrent_requests: 100
+  caching:
+    enabled: true
+    ttl_seconds: 3600
+    max_cache_size: 1000
+
+# Development Settings
+development:
+  debug_mode: false
+  verbose_logging: false
+  save_test_cases: false
+  mock_external_services: false 

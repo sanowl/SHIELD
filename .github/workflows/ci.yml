@@ -1,0 +1,253 @@
+name: SHIELD CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio black flake8
+    
+    - name: Code formatting check
+      run: |
+        black --check shield/
+    
+    - name: Lint with flake8
+      run: |
+        flake8 shield/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 shield/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Setup SHIELD
+      run: |
+        python -m shield setup
+    
+    - name: Run automated tests
+      run: |
+        python -m shield test
+    
+    - name: Run unit tests with pytest
+      run: |
+        pytest tests/ -v --cov=shield --cov-report=xml
+    
+    - name: Security benchmark evaluation
+      run: |
+        python -m shield evaluate --benchmark jailbreakbench --sample-size 10 --output results/jailbreak_results.json
+        python -m shield evaluate --benchmark harmbench --sample-size 10 --output results/harm_results.json
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          results/
+          logs/
+          coverage.xml
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run security analysis
+      uses: github/super-linter@v4
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_PYTHON_BLACK: false
+        VALIDATE_PYTHON_FLAKE8: false
+    
+    - name: Run safety check
+      run: |
+        pip install safety
+        safety check
+
+  performance-test:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install locust
+    
+    - name: Performance testing
+      run: |
+        # Start SHIELD API in background
+        python -m shield serve --host 0.0.0.0 --port 8080 &
+        sleep 10
+        
+        # Run performance tests
+        locust -f tests/performance/locustfile.py --host http://localhost:8080 --users 10 --spawn-rate 2 --run-time 60s --headless --html performance_report.html
+    
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: performance_report.html
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./Dockerfile
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: |
+          shield/framework:latest
+          shield/framework:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan, build-docker]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add actual deployment commands here
+    
+    - name: Run integration tests
+      run: |
+        echo "Running integration tests on staging..."
+        # Add integration test commands here
+    
+    - name: Post-deployment monitoring
+      run: |
+        echo "Setting up post-deployment monitoring..."
+        # Add monitoring setup commands here
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan, build-docker]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add actual deployment commands here
+    
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests on production..."
+        # Add smoke test commands here
+    
+    - name: Update monitoring dashboards
+      run: |
+        echo "Updating production monitoring dashboards..."
+        # Add dashboard update commands here
+
+  generate-docs:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+    
+    - name: Install documentation dependencies
+      run: |
+        pip install sphinx sphinx-rtd-theme myst-parser
+    
+    - name: Generate API documentation
+      run: |
+        sphinx-apidoc -o docs/source shield/
+        sphinx-build -b html docs/source docs/build
+    
+    - name: Deploy documentation
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/build
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan, performance-test]
+    if: always()
+    
+    steps:
+    - name: Notify on success
+      if: ${{ needs.test.result == 'success' && needs.security-scan.result == 'success' }}
+      run: |
+        echo "✅ SHIELD CI/CD pipeline completed successfully!"
+        # Add success notification (Slack, email, etc.)
+    
+    - name: Notify on failure
+      if: ${{ needs.test.result == 'failure' || needs.security-scan.result == 'failure' }}
+      run: |
+        echo "❌ SHIELD CI/CD pipeline failed!"
+        # Add failure notification (Slack, email, etc.) 
